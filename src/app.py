@@ -116,8 +116,15 @@ with tab2:
             if st.button("Mark as Resolved & Save to Learning History"):
                 # Persist the resolution to disk
                 save_resolution(selected_summary, selected_description, st.session_state.current_playbook)
+                
+                # Clear state
+                if data_source == "Live Submitted Ticket":
+                    st.session_state.custom_ticket = None
+                st.session_state.current_playbook = None
+                
                 st.balloons()
                 st.toast("Resolution saved permanently to the Learning History database!", icon="✅")
+                st.rerun()
 
 with tab3:
     st.header("📊 IT Support Analytics")
