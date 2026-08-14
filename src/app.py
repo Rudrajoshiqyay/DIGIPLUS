@@ -93,22 +93,31 @@ with tab2:
 
     # The AI Copilot Action block
     if selected_summary:
+        if 'current_playbook' not in st.session_state:
+            st.session_state.current_playbook = None
+        if 'current_ticket_summary' not in st.session_state or st.session_state.current_ticket_summary != selected_summary:
+            st.session_state.current_playbook = None
+            st.session_state.current_ticket_summary = selected_summary
+
         if st.button("Generate Investigation Playbook", type="primary"):
             with st.spinner("Analyzing rules, searching vector store, and prompting Llama..."):
                 try:
                     playbook = generate_playbook(selected_summary, selected_description)
-                    st.success("Playbook Generated Successfully!")
-                    st.markdown(playbook)
-                    
-                    st.divider()
-                    st.markdown("### Action")
-                    if st.button("Mark as Resolved & Save to Learning History"):
-                        # Persist the resolution to disk
-                        save_resolution(selected_summary, selected_description, playbook)
-                        st.balloons()
-                        st.toast("Resolution saved permanently to the Learning History database!", icon="✅")
+                    st.session_state.current_playbook = playbook
                 except Exception as e:
                     st.error(f"An error occurred: {e}. Please check your Groq API key.")
+
+        if st.session_state.current_playbook:
+            st.success("Playbook Generated Successfully!")
+            st.markdown(st.session_state.current_playbook)
+            
+            st.divider()
+            st.markdown("### Action")
+            if st.button("Mark as Resolved & Save to Learning History"):
+                # Persist the resolution to disk
+                save_resolution(selected_summary, selected_description, st.session_state.current_playbook)
+                st.balloons()
+                st.toast("Resolution saved permanently to the Learning History database!", icon="✅")
 
 with tab3:
     st.header("📊 IT Support Analytics")
