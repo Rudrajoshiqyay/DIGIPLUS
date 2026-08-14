@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.llm_agent import generate_playbook
 from src.storage import save_new_incident, save_resolution
 from src.rule_engine import apply_rules
+from src.triage_agent import chat_with_triage_agent
 
 st.set_page_config(page_title="Digiplus AI Copilot", page_icon="🤖", layout="wide")
 
@@ -34,24 +35,49 @@ if 'custom_ticket' not in st.session_state:
 tab1, tab2, tab3 = st.tabs(["🧑‍💼 Employee Portal", "👨‍💻 Engineer Dashboard", "📊 Analytics"])
 
 with tab1:
-    st.header("Submit a New IT Request")
-    st.markdown("Type a custom issue below. When you click submit, it will be instantly routed to the Support Engineer Dashboard!")
+    st.header("Employee Portal (Triage Agent)")
+    st.markdown("Chat with our AI Assistant to try and resolve your issue immediately!")
     
-    with st.form("ticket_form", clear_on_submit=True):
-        user_summary = st.text_input("Brief Summary (e.g., 'VPN keeps dropping at hotel')")
-        user_description = st.text_area("Detailed Description (e.g., 'I am traveling for work and the wifi here drops my VPN...')")
-        submitted = st.form_submit_button("Submit Ticket")
-        
-        if submitted and user_summary and user_description:
-            # 1. Save to session state for the UI
-            st.session_state.custom_ticket = {
-                "summary": user_summary,
-                "description": user_description
-            }
-            # 2. Persist to disk to satisfy assignment requirements
-            save_new_incident(user_summary, user_description)
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "assistant", "content": "Hi! I am the Digiplus IT Triage Bot. What issue are you facing today?"}]
+
+    # Display chat messages from history on app rerun
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # React to user input
+    if prompt := st.chat_input("Describe your issue..."):
+        # Display user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Get assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("Agent is typing..."):
+                response = chat_with_triage_agent(st.session_state.messages)
             
-            st.success("Ticket Submitted & Saved Successfully! Switch to the 'Engineer Dashboard' tab to resolve it.")
+            if "[ESCALATE]" in response:
+                st.markdown("I couldn't solve this for you, but I have drafted a formal ticket and escalated it to our Human Support Engineers!")
+                
+                # Parse summary and description
+                lines = response.split('\n')
+                summary = "Escalated Ticket"
+                desc = "See chat history."
+                for line in lines:
+                    if line.startswith("Summary:"): summary = line.replace("Summary:", "").strip()
+                    if line.startswith("Description:"): desc = line.replace("Description:", "").strip()
+                
+                # Save to disk
+                save_new_incident(summary, desc)
+                st.session_state.custom_ticket = {"summary": summary, "description": desc}
+                st.success("Ticket Submitted Successfully! Switch to the 'Engineer Dashboard' tab.")
+                
+            else:
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
 with tab2:
     st.header("Incoming Tickets")
