@@ -36,7 +36,7 @@ with tab1:
     st.header("Submit a New IT Request")
     st.markdown("Type a custom issue below. When you click submit, it will be instantly routed to the Support Engineer Dashboard!")
     
-    with st.form("ticket_form"):
+    with st.form("ticket_form", clear_on_submit=True):
         user_summary = st.text_input("Brief Summary (e.g., 'VPN keeps dropping at hotel')")
         user_description = st.text_area("Detailed Description (e.g., 'I am traveling for work and the wifi here drops my VPN...')")
         submitted = st.form_submit_button("Submit Ticket")
