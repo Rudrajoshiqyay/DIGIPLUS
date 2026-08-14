@@ -29,8 +29,8 @@ df = load_data()
 if 'custom_ticket' not in st.session_state:
     st.session_state.custom_ticket = None
 
-# Create the Two Tabs
-tab1, tab2 = st.tabs(["🧑‍💼 Employee Portal (Submit Ticket)", "👨‍💻 Support Engineer Dashboard (AI Copilot)"])
+# Create the Three Tabs
+tab1, tab2, tab3 = st.tabs(["🧑‍💼 Employee Portal", "👨‍💻 Engineer Dashboard", "📊 Analytics"])
 
 with tab1:
     st.header("Submit a New IT Request")
@@ -50,7 +50,7 @@ with tab1:
             # 2. Persist to disk to satisfy assignment requirements
             save_new_incident(user_summary, user_description)
             
-            st.success("Ticket Submitted & Saved Successfully! Switch to the 'Support Engineer Dashboard' tab to resolve it.")
+            st.success("Ticket Submitted & Saved Successfully! Switch to the 'Engineer Dashboard' tab to resolve it.")
 
 with tab2:
     st.header("Incoming Tickets")
@@ -109,3 +109,18 @@ with tab2:
                         st.toast("Resolution saved permanently to the Learning History database!", icon="✅")
                 except Exception as e:
                     st.error(f"An error occurred: {e}. Please check your Groq API key.")
+
+with tab3:
+    st.header("📊 IT Support Analytics")
+    st.markdown("Live analytics of our ticket resolution and Learning History.")
+    
+    resolved_path = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "resolved_tickets.csv")
+    if os.path.exists(resolved_path):
+        resolved_df = pd.read_csv(resolved_path)
+        st.subheader("AI Resolutions Tracking")
+        st.metric(label="Total Tickets Resolved by AI", value=len(resolved_df))
+        
+        st.markdown("### Recent Resolutions")
+        st.dataframe(resolved_df[['timestamp', 'summary', 'status']])
+    else:
+        st.info("No tickets have been resolved yet. Use the Engineer Dashboard to resolve tickets and build the Learning History!")
