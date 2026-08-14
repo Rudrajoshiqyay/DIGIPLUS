@@ -3,6 +3,7 @@
 This project is an AI-powered IT Support Copilot that uses **Retrieval-Augmented Generation (RAG)** to assist human engineers. It automatically tags tickets, searches a local database of past incidents, reads company SOPs, and prompts Llama 3 to draft an Investigation Playbook. 🧑‍💻🤖
 
 ## Features
+- **Conversational Triage Agent**: A Level-1 Support chatbot that attempts to solve basic employee issues before autonomously escalating complex tickets.
 - **Deterministic Rule Engine**: Instantly tags tickets based on keywords to save LLM API costs.
 - **Local Vector Database**: Uses ChromaDB to find similar past tickets.
 - **Human-in-the-Loop AI**: Uses Groq (Llama 3) to generate actionable playbooks based on company policy, keeping the human engineer in control.
