@@ -33,7 +33,11 @@ def check_cache(summary):
         try:
             import pandas as pd
             df = pd.read_csv(csv_path)
-            match = df[df['summary'] == summary]
+            # Normalize strings to ignore case and trailing spaces
+            normalized_summary = str(summary).strip().lower()
+            df['normalized_summary'] = df['summary'].astype(str).str.strip().str.lower()
+            
+            match = df[df['normalized_summary'] == normalized_summary]
             if not match.empty:
                 return match.iloc[-1]['playbook']
         except Exception:
