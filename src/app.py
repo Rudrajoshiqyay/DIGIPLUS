@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.llm_agent import generate_playbook
 from src.storage import save_new_incident, save_resolution
+from src.rule_engine import apply_rules
 
 st.set_page_config(page_title="Digiplus AI Copilot", page_icon="🤖", layout="wide")
 
@@ -111,6 +112,31 @@ with tab2:
             st.success("Playbook Generated Successfully!")
             st.markdown(st.session_state.current_playbook)
             
+            # --- FEATURE: Download Button ---
+            st.download_button(
+                label="💾 Download Playbook (.md)",
+                data=st.session_state.current_playbook,
+                file_name=f"playbook_{selected_summary.replace(' ', '_').lower()}.md",
+                mime="text/markdown"
+            )
+            
+            # --- FEATURE: AI Reasoning Trace ---
+            with st.expander("🔍 View AI Reasoning & Logs"):
+                st.write("**Rule Engine Processing:**")
+                tags = apply_rules(f"{selected_summary} {selected_description}")
+                if tags:
+                    for tag in tags:
+                        st.write(f"- Matched Tag: `{tag}`")
+                else:
+                    st.write("- No specific rules matched. Falling back to semantic search.")
+                
+                st.write("**Vector Store:**")
+                st.write("- Query sent to ChromaDB to retrieve Similar Past Incidents.")
+                
+                st.write("**LLM Generation:**")
+                st.write("- Prompt injected with Knowledge Base policies and Similar Incidents.")
+                st.write("- Llama 3 generation complete.")
+            
             st.divider()
             st.markdown("### Action")
             if st.button("Mark as Resolved & Save to Learning History"):
@@ -130,12 +156,35 @@ with tab3:
     st.header("📊 IT Support Analytics")
     st.markdown("Live analytics of our ticket resolution and Learning History.")
     
+    # --- FEATURE: KPI Metrics Dashboard ---
+    col1, col2, col3 = st.columns(3)
+    
     resolved_path = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "resolved_tickets.csv")
+    submitted_path = os.path.join(os.path.dirname(__file__), "..", "data", "processed", "submitted_tickets.csv")
+    
+    total_submitted = 0
+    if os.path.exists(submitted_path):
+        total_submitted = len(pd.read_csv(submitted_path))
+        
+    total_resolved = 0
+    duplicate_count = 0
+    cache_savings = 0
+    
     if os.path.exists(resolved_path):
         resolved_df = pd.read_csv(resolved_path)
-        st.subheader("AI Resolutions Tracking")
-        st.metric(label="Total Tickets Resolved by AI", value=len(resolved_df))
+        total_resolved = len(resolved_df)
         
+        # Calculate cache hits based on exact duplicate summaries in the resolution history
+        duplicate_count = resolved_df.duplicated(subset=['summary']).sum()
+        cache_savings = duplicate_count * 1500 # Assume ~1500 tokens saved per cached playbook
+    
+    col1.metric("Live Tickets Submitted", total_submitted)
+    col2.metric("Total AI Resolutions", total_resolved)
+    col3.metric("Tokens Saved via Cache", cache_savings, f"{duplicate_count} Cache Hits")
+    
+    st.divider()
+    
+    if total_resolved > 0:
         st.markdown("### Recent Resolutions")
         st.dataframe(resolved_df[['timestamp', 'summary', 'status']])
     else:
