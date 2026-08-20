@@ -44,7 +44,7 @@ Description: The user tried plugging it in, but there are no lights. Suspect har
     
     try:
         completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="llama3-8b-8192",
             messages=api_messages,
             temperature=0.3,
             max_tokens=500,
